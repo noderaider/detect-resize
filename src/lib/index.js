@@ -10,15 +10,13 @@
 **/
 
 // Check `document` and `window` in case of server-side rendering
-const IS_BROWSER = typeof window === 'object'
-const getWindow = () => IS_BROWSER ? window : global
-const _window = getWindow()
+const IS_BROWSER = () => typeof window === 'object'
+const _window = IS_BROWSER() ? window : global
 
-
-const attachEvent = IS_BROWSER ? document.attachEvent : false
+const attachEvent = IS_BROWSER() ? document.attachEvent : false
 let stylesCreated = false
 
-if (IS_BROWSER && !attachEvent) {
+if (IS_BROWSER() && !attachEvent) {
   const requestFrame = (function() {
     let raf = _window.requestAnimationFrame || _window.mozRequestAnimationFrame || _window.webkitRequestAnimationFrame || (fn => setTimeout(fn, 20))
     return fn => raf(fn)
@@ -108,7 +106,7 @@ const createStyles = function() {
 
 const addResizeListener = function(element, fn){
   if (attachEvent) element.attachEvent('onresize', fn)
-  else if(IS_BROWSER) {
+  else if(IS_BROWSER()) {
     if (!element.__resizeTriggers__) {
       if (getComputedStyle(element).position == 'static') element.style.position = 'relative'
       createStyles()
@@ -133,7 +131,7 @@ const addResizeListener = function(element, fn){
 
 const removeResizeListener = function(element, fn){
   if (attachEvent) element.detachEvent('onresize', fn)
-  else if(IS_BROWSER) {
+  else if(IS_BROWSER()) {
     element.__resizeListeners__.splice(element.__resizeListeners__.indexOf(fn), 1)
     if (!element.__resizeListeners__.length) {
         element.removeEventListener('scroll', scrollListener, true)
