@@ -14,6 +14,8 @@
 
 ## How to use
 
+Should work the same as [javascript-detect-element-resize](https://github.com/sdecima/javascript-detect-element-resize) without throwing errors if used in a server environment.
+
 ```js
 import { addResizeListener, removeResizeListener } from 'detect-resize'
 
