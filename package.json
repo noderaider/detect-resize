@@ -1,6 +1,6 @@
 {
   "name": "detect-resize",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Detect element resize in universal applications.",
   "main": "lib/index.js",
   "files": [
