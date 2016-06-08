@@ -15,62 +15,67 @@ const _window = IS_BROWSER() ? window : global
 
 const attachEvent = IS_BROWSER() ? document.attachEvent : false
 let stylesCreated = false
+let animationName = null
+let animationKeyframes = null
+let animationStyle = null
+let animationstartevent = null
+
+const resetTriggers = function(element) {
+  let triggers = element.__resizeTriggers__
+  let expand = triggers.firstElementChild
+  let contract = triggers.lastElementChild
+  let expandChild = expand.firstElementChild
+  contract.scrollLeft = contract.scrollWidth
+  contract.scrollTop = contract.scrollHeight
+  expandChild.style.width = `${expand.offsetWidth + 1}px`
+  expandChild.style.height = `${expand.offsetHeight + 1}px`
+  expand.scrollLeft = expand.scrollWidth
+  expand.scrollTop = expand.scrollHeight
+}
+
+const requestFrame = (function() {
+  let raf = _window.requestAnimationFrame || _window.mozRequestAnimationFrame || _window.webkitRequestAnimationFrame || (fn => setTimeout(fn, 20))
+  return fn => raf(fn)
+})()
+
+const cancelFrame = (function() {
+  let cancel = _window.cancelAnimationFrame || _window.mozCancelAnimationFrame || _window.webkitCancelAnimationFrame || _window.clearTimeout
+  return id => cancel(id)
+})()
+
+const checkTriggers = element => element.offsetWidth != element.__resizeLast__.width || element.offsetHeight != element.__resizeLast__.height
+const scrollListener = function(e){
+  let element = this
+  resetTriggers(this)
+  if (this.__resizeRAF__) cancelFrame(this.__resizeRAF__)
+  this.__resizeRAF__ = requestFrame(function(){
+    if (checkTriggers(element)) {
+      element.__resizeLast__.width = element.offsetWidth
+      element.__resizeLast__.height = element.offsetHeight
+      element.__resizeListeners__.forEach(function(fn){
+        fn.call(element, e)
+      })
+    }
+  })
+}
 
 if (IS_BROWSER() && !attachEvent) {
-  const requestFrame = (function() {
-    let raf = _window.requestAnimationFrame || _window.mozRequestAnimationFrame || _window.webkitRequestAnimationFrame || (fn => setTimeout(fn, 20))
-    return fn => raf(fn)
-  })()
-
-  const cancelFrame = (function() {
-    let cancel = _window.cancelAnimationFrame || _window.mozCancelAnimationFrame || _window.webkitCancelAnimationFrame || _window.clearTimeout
-    return id => cancel(id)
-  })()
-
-  const resetTriggers = function(element) {
-    let triggers = element.__resizeTriggers__
-    let expand = triggers.firstElementChild
-    let contract = triggers.lastElementChild
-    let expandChild = expand.firstElementChild
-    contract.scrollLeft = contract.scrollWidth
-    contract.scrollTop = contract.scrollHeight
-    expandChild.style.width = expand.offsetWidth + 1 + 'px'
-    expandChild.style.height = expand.offsetHeight + 1 + 'px'
-    expand.scrollLeft = expand.scrollWidth
-    expand.scrollTop = expand.scrollHeight
-  }
-
-  const checkTriggers = element => element.offsetWidth != element.__resizeLast__.width || element.offsetHeight != element.__resizeLast__.height
-  const scrollListener = function(e){
-    let element = this
-    resetTriggers(this)
-    if (this.__resizeRAF__) cancelFrame(this.__resizeRAF__)
-    this.__resizeRAF__ = requestFrame(function(){
-      if (checkTriggers(element)) {
-        element.__resizeLast__.width = element.offsetWidth
-        element.__resizeLast__.height = element.offsetHeight
-        element.__resizeListeners__.forEach(function(fn){
-          fn.call(element, e)
-        })
-      }
-    })
-  }
 
   /* Detect CSS Animations support to detect element display/re-attach */
   let animation = false
   let animationstring = 'animation'
   let keyframeprefix = ''
-  let animationstartevent = 'animationstart'
+  animationstartevent = 'animationstart'
   let domPrefixes = 'Webkit Moz O ms'.split(' ')
   let startEvents = 'webkitAnimationStart animationstart oAnimationStart MSAnimationStart'.split(' ')
   let pfx  = ''
   const elm = document.createElement('fakeelement')
-  if( typeof elm.style.animationName !== 'undefined' ) animation = true
+  if(typeof elm.style.animationName !== 'undefined') animation = true
 
   if(animation === false) {
     for( var i = 0; i < domPrefixes.length; i++ ) {
-      if( elm.style[ domPrefixes[i] + 'AnimationName' ] !== undefined ) {
-        pfx = domPrefixes[ i ]
+      if(typeof elm.style[ domPrefixes[i] + 'AnimationName' ] !== 'undefined') {
+        pfx = domPrefixes[i]
         animationstring = pfx + 'Animation'
         keyframeprefix = '-' + pfx.toLowerCase() + '-'
         animationstartevent = startEvents[ i ]
@@ -80,9 +85,9 @@ if (IS_BROWSER() && !attachEvent) {
     }
   }
 
-  let animationName = 'resizeanim'
-  let animationKeyframes = '@' + keyframeprefix + 'keyframes ' + animationName + ' { from { opacity: 0; } to { opacity: 0; } } '
-  let animationStyle = keyframeprefix + 'animation: 1ms ' + animationName + '; '
+  animationName = 'resizeanim'
+  animationKeyframes = '@' + keyframeprefix + 'keyframes ' + animationName + ' { from { opacity: 0; } to { opacity: 0; } } '
+  animationStyle = keyframeprefix + 'animation: 1ms ' + animationName + '; '
 }
 
 const createStyles = function() {
